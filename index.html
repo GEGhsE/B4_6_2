@@ -1064,6 +1064,16 @@
   function _demoSet(key, val) {
     try { localStorage.setItem('demo:' + APP_ID + ':' + key, JSON.stringify(val)); } catch(e) {}
   }
+  // 데모용 4학년 등급 기준표 (실제 시트가 없을 때 체험 모드에서 사용)
+  // 구조: { 종목: { 학년: { 성별: [1~5등급 경계값] } } }
+  const DEMO_STANDARDS = {
+    '왕복오래달리기':   { '4': { '남': [19,26,45,69,96], '여': [16,21,40,57,77] } },
+    '앉아윗몸앞으로굽히기': { '4': { '남': [2,4,7,10,13],   '여': [4,6,9,12,15]   } },
+    '악력':             { '4': { '남': [10,14,18,22,26], '여': [9,12,16,20,24] } },
+    '제자리멀리뛰기':    { '4': { '남': [110,130,150,170,190], '여': [100,118,138,158,178] } },
+    'BMI':              { '4': { '남': [14,15,19,23,26], '여': [14,15,19,23,26] } },
+  };
+
   function demoApi(action, d) {
     // 데모 종목 (기본 4종목 + BMI)
     const demoConfig = [
@@ -1089,6 +1099,11 @@
           userInfo: { num: String(n), name: '학생' + n, grade: 4, gender: (n % 2 ? '남' : '여'), classRoom: (n <= 15 ? '1반' : '2반') },
           skillConfig: demoConfig.map(c => c.factor),
           measureConfig: demoConfig,
+          // 아래 세 가지는 실제 서버 응답과 같은 모양으로 맞춘다.
+          // 이게 없으면 화면이 기준표를 undefined에서 읽으려다 오류가 났다.
+          papsRecord: _demoGet('paps:' + n, {}),
+          myLogs: _demoGet('logs:' + n, []),
+          papsStandards: DEMO_STANDARDS,
         };
       }
       case 'getStudentData': {
