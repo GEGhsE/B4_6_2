@@ -142,7 +142,7 @@
         <button onclick="onConnectSheet()"
           style="width:100%; padding:11px; background:var(--blue); color:white; border:none; border-radius:8px; font-size:14px; font-weight:700; cursor:pointer;">연결하기</button>
         <div id="student-link-box" style="display:none; margin-top:12px; padding:10px; background:#eff6ff; border-radius:8px;">
-          <div style="font-size:12px; color:#1e40af; font-weight:700; margin-bottom:6px;">학생용 입장 주소</div>
+          <div id="student-link-label" style="font-size:12px; color:#1e40af; font-weight:700; margin-bottom:6px;">학생용 입장 주소</div>
           <div style="display:flex; gap:6px;">
             <input id="student-link-input" type="text" readonly
               style="flex:1; padding:8px; border:1px solid #bfdbfe; border-radius:6px; font-size:12px; background:white; box-sizing:border-box;" />
@@ -150,7 +150,7 @@
               style="padding:8px 12px; background:#1e40af; color:white; border:none; border-radius:6px; font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap;">복사</button>
           </div>
 
-          <div style="font-size:12px; color:#92400e; font-weight:700; margin:12px 0 6px;">선생님용 관리 화면 주소 <span style="font-weight:400; color:#b45309;">(선생님만 쓰세요)</span></div>
+          <div id="teacher-link-label" style="font-size:12px; color:#92400e; font-weight:700; margin:12px 0 6px;">선생님용 관리 화면 주소 <span style="font-weight:400; color:#b45309;">(선생님만 쓰세요)</span></div>
           <div style="display:flex; gap:6px;">
             <input id="teacher-link-input" type="text" readonly
               style="flex:1; padding:8px; border:1px solid #fcd34d; border-radius:6px; font-size:12px; background:white; box-sizing:border-box;" />
@@ -980,7 +980,11 @@
     } else {
       path = path.replace(/\/?$/, '/') + 'Teacher.html';
     }
-    return location.origin + path + '#c=' + encodeURIComponent(_execUrl);
+    const url = location.origin + path;
+    // 시트에 연결된 상태면 그 주소를 함께 실어 준다.
+    // 체험 모드면 붙이지 않는다. 그래야 선생님 페이지도 체험 모드로 열린다.
+    if (_execUrl) return url + '#c=' + encodeURIComponent(_execUrl);
+    return url;
   }
 
   function copyTeacherLink() {
@@ -1425,11 +1429,28 @@
     if (!el) return;
     if (_isDemo) {
       el.innerHTML = '<span style="color:#f59e0b;">● 체험 모드</span> · 시트를 연결하면 우리 반 학생으로 바뀌어요';
+      // 체험 모드에서도 선생님 페이지를 체험해 볼 수 있게 버튼을 보여 준다.
+      const box = document.getElementById('student-link-box');
+      if (box) box.style.display = 'block';
+      // 학생용 입장 주소는 체험 모드에서 의미가 없으니 숨긴다.
+      const sLabel = document.getElementById('student-link-label');
+      const sInp = document.getElementById('student-link-input');
+      if (sLabel) sLabel.style.display = 'none';
+      if (sInp) { const w = sInp.closest('div'); if (w) w.style.display = 'none'; }
+      const tLabel = document.getElementById('teacher-link-label');
+      if (tLabel) tLabel.innerHTML = '선생님용 관리 화면 열어 보기 <span style="font-weight:400; color:#b45309;">(체험 모드)</span>';
+      const tinp = document.getElementById('teacher-link-input');
+      if (tinp) tinp.value = getTeacherLink();   // 체험 모드는 #c= 없이 Teacher.html 로만 연결
     } else {
       el.innerHTML = '<span style="color:#16a34a;">● 우리 반 시트 연결됨</span>';
       const box = document.getElementById('student-link-box');
       const inp = document.getElementById('student-link-input');
+      const sLabel = document.getElementById('student-link-label');
+      if (sLabel) sLabel.style.display = '';
+      if (inp) { const w = inp.closest('div'); if (w) w.style.display = ''; }
       if (box && inp) { box.style.display = 'block'; inp.value = getStudentLink(); }
+      const tLabel = document.getElementById('teacher-link-label');
+      if (tLabel) tLabel.innerHTML = '선생님용 관리 화면 주소 <span style="font-weight:400; color:#b45309;">(선생님만 쓰세요)</span>';
       const tinp = document.getElementById('teacher-link-input');
       if (tinp) tinp.value = getTeacherLink();
     }
@@ -1730,7 +1751,7 @@
 
   function calculateGradeLocally(papsName, score) {
     if (score === null || score === undefined) return { grade: null, nextThreshold: 0 };
-    if (!user || !PAPS_STANDARDS[papsName]) return { grade: 6, nextThreshold: 0 };
+    if (!user || !PAPS_STANDARDS || !PAPS_STANDARDS[papsName]) return { grade: 6, nextThreshold: 0 };
     const gradeLv = user.grade.toString();
     const std = PAPS_STANDARDS[papsName][gradeLv];
     if (!std) return { grade: 6, nextThreshold: 0 };
@@ -2543,7 +2564,7 @@
 
   /* ── 등급표 팝업 ── */
   function showGradeTable(papsName) {
-    if (!user || !PAPS_STANDARDS[papsName]) return;
+    if (!user || !PAPS_STANDARDS || !PAPS_STANDARDS[papsName]) return;
     const grade  = String(user.grade || '').trim();
     const gender = String(user.gender || '').trim();
     const std    = PAPS_STANDARDS[papsName];
