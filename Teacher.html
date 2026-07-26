@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PAPS 교사 관리</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Noto Sans KR', sans-serif; background: #f1f5f9; min-height: 100vh; color: #1e293b; }
+.login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.login-box { background: white; border-radius: 24px; padding: 40px 36px; max-width: 420px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,0.08); }
+.app-wrap { display: none; max-width: 680px; margin: 0 auto; padding: 20px 16px; }
+h1 { font-size: 28px; font-weight: 900; color: #1d4ed8; margin-bottom: 6px; }
+.sub { font-size: 14px; color: #64748b; margin-bottom: 28px; }
+label { font-size: 13px; font-weight: 700; color: #64748b; display: block; margin-bottom: 6px; }
+input, select { width: 100%; padding: 13px 14px; border-radius: 12px; border: 1.5px solid #e2e8f0; font-size: 15px; font-family: 'Noto Sans KR', sans-serif; margin-bottom: 14px; background: #f8fafc; outline: none; }
+input:focus, select:focus { border-color: #1d4ed8; background: white; }
+.btn-primary { width: 100%; padding: 14px; background: #1d4ed8; color: white; border: none; border-radius: 14px; font-size: 16px; font-weight: 900; cursor: pointer; font-family: 'Noto Sans KR', sans-serif; }
+.btn-primary:hover { background: #1e40af; }
+.card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 16px; border: 1px solid #e2e8f0; }
+.card h2 { font-size: 17px; font-weight: 900; margin-bottom: 14px; color: #1e293b; }
+.event-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; margin-bottom: 16px; }
+.ev-card { border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 14px; cursor: pointer; transition: all 0.15s; }
+.ev-card:hover, .ev-card.active { border-color: #1d4ed8; background: #eff6ff; }
+.ev-card .emoji { font-size: 24px; margin-bottom: 6px; }
+.ev-card .name { font-size: 14px; font-weight: 700; color: #1e293b; }
+.ev-card .unit { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+.ev-card { position: relative; }
+.ev-card.mine-card { border-color: #1d4ed8; }
+.ev-card.measured { border-color: #16a34a; background: #f0fdf4; padding-top: 28px; }
+.ev-card.measured.active { border-color: #16a34a; background: #dcfce7; }
+.ev-card:not(.measured) { padding-top: 28px; }
+.charge-badge { position: absolute; top: 8px; right: 8px; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 20px; }
+.charge-badge.mine { background: #dbeafe; color: #1d4ed8; }
+.charge-badge.other { background: #f1f5f9; color: #94a3b8; }
+.input-row { display: flex; gap: 10px; align-items: flex-end; }
+.input-row input { margin-bottom: 0; flex: 1; }
+.input-row span { font-size: 16px; font-weight: 700; padding-bottom: 13px; white-space: nowrap; color: #64748b; }
+.btn-save { padding: 13px 24px; background: #059669; color: white; border: none; border-radius: 12px; font-size: 15px; font-weight: 900; cursor: pointer; font-family: 'Noto Sans KR', sans-serif; white-space: nowrap; }
+.record-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.record-table th { background: #f1f5f9; padding: 10px 12px; text-align: center; font-weight: 700; color: #64748b; }
+.record-table td { padding: 10px 12px; text-align: center; border-bottom: 1px solid #f1f5f9; }
+/* 반 현황 표 (종목별 컬럼) */
+.class-record-table { border-collapse: collapse; font-size: 14px; width: auto; min-width: 100%; }
+.class-record-table thead th { background: #f1f5f9; padding: 8px 10px; font-weight: 700; color: #64748b; border-bottom: 2px solid #e2e8f0; position: sticky; top: 0; }
+.class-record-table tbody td { padding: 9px 10px; border-bottom: 1px solid #f1f5f9; }
+.class-record-table tbody tr:nth-child(even) { background: #fafbfc; }
+.class-record-table tbody tr:hover { background: #f0f9ff; }
+.cvt-btn { padding:8px 14px; border:1.5px solid #e2e8f0; background:white; color:#475569; border-radius:20px; font-size:13px; font-weight:700; cursor:pointer; font-family:'Noto Sans KR',sans-serif; }
+.cvt-btn.active { background:#7c3aed; color:white; border-color:#7c3aed; }
+.grade-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1d4ed8; color: white; padding: 12px 24px; border-radius: 20px; font-size: 14px; font-weight: 700; display: none; z-index: 9999; white-space: nowrap; }
+.header-bar { background: white; border-bottom: 1px solid #e2e8f0; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-radius: 16px; }
+.header-bar h2 { font-size: 18px; font-weight: 900; color: #1d4ed8; }
+.logout-btn { font-size: 13px; color: #ef4444; background: #fef2f2; border: none; padding: 6px 14px; border-radius: 20px; cursor: pointer; font-family: 'Noto Sans KR', sans-serif; font-weight: 700; }
+.akryok-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+</style>
+</head>
+<body>
+
+<!-- 로그인 화면 -->
+<div class="login-wrap" id="login-screen">
+  <div class="login-box">
+    <div style="font-size:40px; text-align:center; margin-bottom:14px;">📋</div>
+    <h1 style="text-align:center; display:flex; align-items:center; justify-content:center; gap:8px;"><svg viewBox="0 0 48 48" width="30" height="30" style="vertical-align:middle;"><circle cx="24" cy="24" r="20" fill="#0f9d58"/><path d="M24 33 C16 27 13 22 16 18 C18 15 22 16 24 20 C26 16 30 15 32 18 C35 22 32 27 24 33Z" fill="#fff"/><path d="M10 24 L18 24 L21 19 L25 29 L28 24 L38 24" stroke="#0f9d58" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><span>PAPS 교사 관리</span></h1>
+    <p class="sub" style="text-align:center;">학생 PAPS 기록 입력 및 현황 확인</p>
+    <label>교사 비밀번호</label>
+    <input type="password" id="teacher-pw" placeholder="교사 비밀번호 입력" onkeydown="if(event.key==='Enter')teacherLogin()" />
+    <button class="btn-primary" onclick="teacherLogin()">🔐 로그인</button>
+
+    <!-- 선생님 메뉴 -->
+    <div style="margin-top:18px;">
+      <button onclick="toggleTeacherSetup()" id="teacher-setup-toggle"
+        style="width:100%; padding:12px; background:#f1f5f9; color:#64748b; border:none; border-radius:12px; font-size:14px; font-weight:700; cursor:pointer;">⚙️ 선생님 메뉴</button>
+      <div id="teacher-setup-panel" style="display:none; margin-top:10px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
+        <div id="conn-status" style="font-size:13px; font-weight:700; margin-bottom:10px;"></div>
+        <label style="font-size:13px; color:#475569; font-weight:700; display:block; margin-bottom:6px;">우리 반 시트 웹앱 주소(.../exec)</label>
+        <input id="exec-url-input" type="text" placeholder="https://script.google.com/.../exec"
+          style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px; margin-bottom:8px; box-sizing:border-box;" />
+        <button onclick="onConnectSheet()"
+          style="width:100%; padding:11px; background:#0f9d58; color:white; border:none; border-radius:8px; font-size:14px; font-weight:700; cursor:pointer;">연결하기</button>
+        <div id="student-link-box" style="display:none; margin-top:12px; padding:10px; background:#ecfdf5; border-radius:8px;">
+          <div style="font-size:12px; color:#065f46; font-weight:700; margin-bottom:6px;">학생용 입장 주소</div>
+          <div style="display:flex; gap:6px;">
+            <input id="student-link-input" type="text" readonly
+              style="flex:1; padding:8px; border:1px solid #a7f3d0; border-radius:6px; font-size:12px; background:white; box-sizing:border-box;" />
+            <button onclick="copyStudentLink()"
+              style="padding:8px 12px; background:#065f46; color:white; border:none; border-radius:6px; font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap;">복사</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 앱 화면 -->
+<div class="app-wrap" id="app-screen">
+  <div class="header-bar">
+    <div>
+      <h2 style="display:flex; align-items:center; gap:7px;"><svg viewBox="0 0 48 48" width="30" height="30" style="vertical-align:middle;"><circle cx="24" cy="24" r="20" fill="#0f9d58"/><path d="M24 33 C16 27 13 22 16 18 C18 15 22 16 24 20 C26 16 30 15 32 18 C35 22 32 27 24 33Z" fill="#fff"/><path d="M10 24 L18 24 L21 19 L25 29 L28 24 L38 24" stroke="#0f9d58" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><span>PAPS 교사 관리</span></h2>
+      <span id="teacher-badge" style="display:none; font-size:12px; background:#e0f2fe; color:#0369a1; padding:3px 10px; border-radius:20px; font-weight:700; margin-top:4px;"></span>
+    </div>
+    <button class="logout-btn" onclick="logout()">로그아웃</button>
+  </div>
+
+  <!-- 학생 선택 -->
+  <div class="card">
+    <h2>👤 학생 선택</h2>
+    <!-- 반 필터 (체육전담만 표시) -->
+    <div id="class-filter" style="display:none; margin-bottom:12px;">
+      <label>반 선택</label>
+      <div id="class-btns" style="display:flex; gap:8px; flex-wrap:wrap;"></div>
+    </div>
+    <select id="student-sel" onchange="onStudentChange()">
+      <option value="">학생을 선택하세요</option>
+    </select>
+    <div id="student-info" style="display:none; background:#f0f9ff; border-radius:10px; padding:12px 14px; font-size:14px; color:#0369a1; font-weight:700;"></div>
+  </div>
+
+  <!-- PAPS 기록 입력 -->
+  <div class="card" id="input-card" style="display:none;">
+    <h2>✏️ PAPS 기록 입력</h2>
+    <div id="measure-progress" style="margin-bottom:14px;"></div>
+    <div class="event-grid" id="event-grid"></div>
+
+    <!-- 일반 입력 -->
+    <div id="normal-input" style="display:none;">
+      <div id="sel-event-banner" style="display:flex; align-items:center; gap:10px; background:#eff6ff; border-radius:12px; padding:12px 14px; margin-bottom:14px;">
+        <span id="sel-event-char"></span>
+        <div>
+          <div id="sel-event-name" style="font-size:16px; font-weight:900; color:#1e40af;"></div>
+          <div id="sel-event-hint" style="font-size:12px; color:#3b82f6;"></div>
+        </div>
+      </div>
+      <label id="input-label">기록 입력</label>
+      <div class="input-row">
+        <input type="number" id="paps-value" placeholder="0" step="0.1" inputmode="decimal" />
+        <span id="paps-unit-label">회</span>
+        <button class="btn-save" onclick="saveRecord()">저장</button>
+      </div>
+    </div>
+
+    <!-- BMI 전용 (키·몸무게 → 자동 계산) -->
+    <div id="bmi-input" style="display:none;">
+      <label>BMI 입력 (키 / 몸무게)</label>
+      <div class="akryok-grid">
+        <div>
+          <label>📏 키 (cm)</label>
+          <input type="number" id="bmi-height" placeholder="140" step="0.1" inputmode="decimal" oninput="calcBmiPreview()" style="margin-bottom:0;" />
+        </div>
+        <div>
+          <label>⚖️ 몸무게 (kg)</label>
+          <input type="number" id="bmi-weight" placeholder="35" step="0.1" inputmode="decimal" oninput="calcBmiPreview()" style="margin-bottom:0;" />
+        </div>
+      </div>
+      <div id="bmi-preview" style="text-align:center; font-size:16px; font-weight:900; color:#6b21a8; margin: 14px 0; display:none;">
+        BMI: <span id="bmi-val">-</span> · <span id="bmi-status">-</span>
+      </div>
+      <button class="btn-save" style="width:100%; margin-top:8px;" onclick="saveBmi()">저장</button>
+    </div>
+
+    <!-- 악력 전용 -->
+    <div id="akryok-input" style="display:none;">
+      <label>악력 입력 (오른손 / 왼손)</label>
+      <div class="akryok-grid">
+        <div>
+          <label>🤜 오른손 (kg)</label>
+          <input type="number" id="ak-right" placeholder="0.0" step="0.1" inputmode="decimal" oninput="calcAvg()" style="margin-bottom:0;" />
+        </div>
+        <div>
+          <label>🤛 왼손 (kg)</label>
+          <input type="number" id="ak-left" placeholder="0.0" step="0.1" inputmode="decimal" oninput="calcAvg()" style="margin-bottom:0;" />
+        </div>
+      </div>
+      <div id="ak-avg" style="text-align:center; font-size:18px; font-weight:900; color:#d97706; margin: 12px 0; display:none;">평균: <span id="ak-avg-val">-</span> kg</div>
+      <button class="btn-save" style="width:100%; margin-top:8px;" onclick="saveAkryok()">저장</button>
+    </div>
+  </div>
+
+  <!-- 학생별 기록 현황 -->
+  <div class="card" id="records-card" style="display:none;">
+    <h2>📊 현재 기록</h2>
+    <table class="record-table">
+      <thead>
+        <tr>
+          <th>종목</th>
+          <th>기록</th>
+          <th>등급</th>
+        </tr>
+      </thead>
+      <tbody id="records-tbody"></tbody>
+    </table>
+  </div>
+
+  <!-- 반 전체 현황 -->
+  <div class="card">
+    <h2>🏫 반 전체 현황</h2>
+    <button onclick="loadClassRecords()" style="padding:10px 20px; background:#7c3aed; color:white; border:none; border-radius:12px; font-size:14px; font-weight:700; cursor:pointer; font-family:'Noto Sans KR',sans-serif; margin-bottom:14px;">현황 불러오기</button>
+
+    <!-- 보기 탭 -->
+    <div id="class-view-tabs" style="display:none; gap:6px; margin-bottom:14px; flex-wrap:wrap;">
+      <button onclick="switchClassView('table')"  id="cvt-table"  class="cvt-btn">📋 기록표</button>
+      <button onclick="switchClassView('todo')"   id="cvt-todo"   class="cvt-btn">⚠️ 미측정</button>
+      <button onclick="switchClassView('grade')"  id="cvt-grade"  class="cvt-btn">📊 등급 분포</button>
+      <button onclick="exportClassCSV()"          id="cvt-csv"    class="cvt-btn" style="margin-left:auto;">⬇️ 엑셀(CSV)</button>
+    </div>
+
+    <!-- 검색·정렬 도구 (기록표에서만) -->
+    <div id="class-tools" style="display:none; gap:8px; margin-bottom:12px; flex-wrap:wrap; align-items:center;">
+      <input id="class-search" type="text" placeholder="🔍 이름·번호 검색" oninput="renderClassTable()"
+        style="flex:1; min-width:140px; padding:9px 12px; border:1px solid #cbd5e1; border-radius:10px; font-size:14px; font-family:'Noto Sans KR',sans-serif;" />
+      <select id="class-sort" onchange="renderClassTable()"
+        style="padding:9px 12px; border:1px solid #cbd5e1; border-radius:10px; font-size:14px; font-family:'Noto Sans KR',sans-serif;">
+        <option value="num">번호순</option>
+        <option value="name">이름순</option>
+        <option value="done-desc">측정 많은순</option>
+        <option value="done-asc">측정 적은순</option>
+      </select>
+    </div>
+
+    <div id="class-records" style="font-size:14px; color:#64748b;"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ══════════════════════════════════════════
+   통신 레이어 (시트 연동 / 데모 모드) — 교사용
+   ══════════════════════════════════════════ */
+const APP_ID = 'paps';
+let _execUrl = '';
+let _isDemo  = true;
+let _isNative = false;
+let _jsonpSeq = 0;
+
+(function detectConnection() {
+  // [A] GAS 모드: 진짜 앱스스크립트 안에서 열렸는지 (host 객체는 흉내 어댑터에 없음)
+  let hasGas = false;
+  try { hasGas = (typeof google !== 'undefined' && google.script && !!google.script.host); } catch(e) {}
+  if (hasGas) { _isNative = true; _isDemo = false; _execUrl = ''; return; }
+
+  // [B] 연동 모드: 학생/교사 링크(#c=주소) 또는 저장된 주소
+  let fromHash = '';
+  try {
+    const m = (location.hash || '').match(/[#&]c=([^&]+)/);
+    if (m) fromHash = decodeURIComponent(m[1]);
+  } catch(e) {}
+  let saved = '';
+  try { saved = localStorage.getItem('execUrl:' + APP_ID) || ''; } catch(e) {}
+  if (fromHash) { _execUrl = fromHash; _isDemo = false; }
+  else if (saved) { _execUrl = saved; _isDemo = false; }
+  else { _execUrl = ''; _isDemo = true; }  // [C] 데모 모드
+})();
+
+function callApi(action, payload) {
+  return new Promise((resolve, reject) => {
+    if (_isDemo || !_execUrl) { return resolve(demoApiT(action, payload || {})); }
+    _jsonpSeq += 1;
+    const cbName = '__jsonp_cb_' + Date.now() + '_' + _jsonpSeq;
+    const timeout = setTimeout(() => { cleanup(); reject(new Error('서버 응답 시간 초과')); }, 15000);
+    function cleanup() {
+      clearTimeout(timeout);
+      try { delete window[cbName]; } catch(e) { window[cbName] = undefined; }
+      if (script && script.parentNode) script.parentNode.removeChild(script);
+    }
+    window[cbName] = (res) => { cleanup(); resolve(res); };
+    const payloadStr = JSON.stringify(payload || {});
+    // 내용이 길면 주소 길이 제한에 걸릴 수 있어 본문으로 보낸다.
+    if (payloadStr.length > 6000 && typeof fetch === 'function') {
+      clearTimeout(timeout);
+      try { delete window[cbName]; } catch(e) {}
+      fetch(_execUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: action, payload: payload || {} })
+      })
+      .then(r => r.json())
+      .then(resolve)
+      .catch(() => reject(new Error('서버 연결 실패')));
+      return;
+    }
+    const url = _execUrl + (_execUrl.indexOf('?') >= 0 ? '&' : '?')
+      + 'action=' + encodeURIComponent(action)
+      + '&callback=' + encodeURIComponent(cbName)
+      + '&payload=' + encodeURIComponent(payloadStr);
+    const script = document.createElement('script');
+    script.src = url;
+    script.onerror = () => { cleanup(); reject(new Error('서버 연결 실패')); };
+    document.body.appendChild(script);
+  });
+}
+
+function connectSheet(url) {
+  url = (url || '').trim();
+  if (!url || url.indexOf('/exec') < 0) { alert('올바른 웹앱 주소(.../exec)를 입력해주세요.'); return false; }
+  _execUrl = url; _isDemo = false;
+  try { localStorage.setItem('execUrl:' + APP_ID, url); } catch(e) {}
+  return true;
+}
+
+// google.script.run 호환 어댑터 — GAS 환경(google 존재)에서는 만들지 않음
+if (typeof google === 'undefined') {
+  window.google = {};
+  google.script = {};
+  const _ACTION_MAP = { getStudentDataInternal: 'getStudentData' };
+  function makeRunner() {
+    let okCb = null, failCb = null;
+    const runner = new Proxy({}, {
+      get(_t, prop) {
+        if (prop === 'withSuccessHandler') return (f) => { okCb = f; return runner; };
+        if (prop === 'withFailureHandler') return (f) => { failCb = f; return runner; };
+        return function(...args) {
+          const action = _ACTION_MAP[prop] || prop;
+          const payload = _argsToPayloadT(action, args);
+          callApi(action, payload)
+            .then(res => { if (okCb) okCb(res); })
+            .catch(err => { if (failCb) failCb(err); else console.error(err); });
+          return runner;
+        };
+      }
+    });
+    return runner;
+  }
+  Object.defineProperty(google.script, 'run', { get: makeRunner, configurable: true });
+}
+
+function _argsToPayloadT(action, args) {
+  switch (action) {
+    case 'verifyTeacher':        return { password: args[0] };
+    case 'getStudentList':       return { classRoom: args[0] };
+    case 'getStudentData':       return { num: args[0] };
+    case 'saveTeacherPaps':      return { num: args[0], papsName: args[1], value: args[2], rightVal: args[3], leftVal: args[4], teacherName: args[5], heightCm: args[6], weightKg: args[7] };
+    case 'getClassRecords':      return {};
+    case 'getMeasurementConfig': return {};
+    default: return {};
+  }
+}
+
+// 교사용 데모 핸들러
+function _demoGetT(key, fallback) {
+  try { const v = localStorage.getItem('demo:' + APP_ID + ':' + key); return v ? JSON.parse(v) : fallback; }
+  catch(e) { return fallback; }
+}
+function _demoSetT(key, val) {
+  try { localStorage.setItem('demo:' + APP_ID + ':' + key, JSON.stringify(val)); } catch(e) {}
+}
+function demoApiT(action, d) {
+  const demoConfig = [
+    { factor:'심폐지구력',   event:'왕복오래달리기',     unit:'회', dir:'높을수록좋음', charge:'공통' },
+    { factor:'유연성',       event:'앉아윗몸앞으로굽히기', unit:'cm', dir:'높을수록좋음', charge:'공통' },
+    { factor:'근력근지구력', event:'악력',               unit:'kg', dir:'높을수록좋음', charge:'공통' },
+    { factor:'순발력',       event:'제자리멀리뛰기',      unit:'cm', dir:'높을수록좋음', charge:'공통' },
+    { factor:'체지방',       event:'BMI',                unit:'',   dir:'범위',         charge:'공통' },
+  ];
+  switch (action) {
+    case 'verifyTeacher':
+      return { success: true, teacher: { name: '체험 선생님', role: '담임', classRoom: '전체' } };
+    case 'getStudentList': {
+      const list = [];
+      for (let i = 1; i <= 30; i++) list.push({ num: String(i), name: '학생' + i, classRoom: '' });
+      return { success: true, students: list, classes: [] };
+    }
+    case 'getStudentData': {
+      const num = String(d.num);
+      return { success: true, userInfo: { num, name: '학생' + num, grade: 4, gender: (parseInt(num)%2?'남':'여'), classRoom: '' },
+        papsRecord: _demoGetT('paps:' + num, {}), myLogs: [], measureConfig: demoConfig };
+    }
+    case 'getMeasurementConfig':
+      return { success: true, config: demoConfig };
+    case 'saveTeacherPaps': {
+      const num = String(d.num);
+      const rec = _demoGetT('paps:' + num, {});
+      rec[d.papsName] = d.value;
+      _demoSetT('paps:' + num, rec);
+      return { success: true, bmiStatus: '' };
+    }
+    case 'getClassRecords': {
+      const records = [];
+      for (let i = 1; i <= 30; i++) {
+        records.push({ num: String(i), name: '학생' + i, classRoom: '', records: _demoGetT('paps:' + i, {}), grades: {} });
+      }
+      return { success: true, records };
+    }
+    default:
+      return { success: false, error: '체험 모드에서는 지원하지 않아요. 시트를 연결하면 저장돼요.' };
+  }
+}
+
+// 귀여운 동물 캐릭터 SVG (체력요소별)
+function papsChar(factor, size) {
+  size = size || 54;
+  const F = {
+    '심폐지구력': `<svg viewBox="0 0 100 100" width="${size}" height="${size}"><ellipse cx="50" cy="90" rx="20" ry="4" fill="#A9CDF0" opacity="0.5"/><ellipse cx="40" cy="22" rx="6" ry="20" fill="#A8D2FA"/><ellipse cx="60" cy="22" rx="6" ry="20" fill="#A8D2FA"/><ellipse cx="40" cy="24" rx="3" ry="14" fill="#F8C8D8"/><ellipse cx="60" cy="24" rx="3" ry="14" fill="#F8C8D8"/><circle cx="50" cy="56" r="26" fill="#A8D2FA"/><circle cx="50" cy="58" r="20" fill="#E0EFFC"/><circle cx="42" cy="54" r="4.5" fill="#1E3A5F"/><circle cx="58" cy="54" r="4.5" fill="#1E3A5F"/><circle cx="43.5" cy="52.5" r="1.5" fill="#fff"/><circle cx="59.5" cy="52.5" r="1.5" fill="#fff"/><ellipse cx="36" cy="62" rx="4" ry="2.5" fill="#F8B5C8" opacity="0.7"/><ellipse cx="64" cy="62" rx="4" ry="2.5" fill="#F8B5C8" opacity="0.7"/><ellipse cx="50" cy="60" rx="2.5" ry="1.8" fill="#E87B9D"/><path d="M45 64 Q50 68 55 64" stroke="#1E3A5F" stroke-width="2" fill="none" stroke-linecap="round"/></svg>`,
+    '유연성': `<svg viewBox="0 0 100 100" width="${size}" height="${size}"><ellipse cx="50" cy="90" rx="20" ry="4" fill="#9FE1CB" opacity="0.5"/><path d="M28 38 L24 18 L42 30Z" fill="#8FE0BE"/><path d="M72 38 L76 18 L58 30Z" fill="#8FE0BE"/><path d="M30 35 L28 24 L38 31Z" fill="#C2EFDC"/><path d="M70 35 L72 24 L62 31Z" fill="#C2EFDC"/><circle cx="50" cy="56" r="25" fill="#8FE0BE"/><circle cx="50" cy="58" r="19" fill="#C2EFDC"/><circle cx="42" cy="54" r="4.5" fill="#1B5E43"/><circle cx="58" cy="54" r="4.5" fill="#1B5E43"/><circle cx="43.5" cy="52.5" r="1.5" fill="#fff"/><circle cx="59.5" cy="52.5" r="1.5" fill="#fff"/><ellipse cx="36" cy="61" rx="4" ry="2.5" fill="#F8B5C8" opacity="0.7"/><ellipse cx="64" cy="61" rx="4" ry="2.5" fill="#F8B5C8" opacity="0.7"/><path d="M48 59 L52 59 L50 62Z" fill="#E87B9D"/><path d="M30 56 L20 54 M30 60 L20 60 M68 56 L78 54 M68 60 L78 60" stroke="#6FCBA0" stroke-width="1.3" stroke-linecap="round"/></svg>`,
+    '근력근지구력': `<svg viewBox="0 0 100 100" width="${size}" height="${size}"><ellipse cx="50" cy="90" rx="20" ry="4" fill="#FAC775" opacity="0.5"/><g fill="#E89020"><ellipse cx="50" cy="30" rx="11" ry="9"/><ellipse cx="28" cy="40" rx="10" ry="11"/><ellipse cx="72" cy="40" rx="10" ry="11"/><ellipse cx="24" cy="62" rx="9" ry="10"/><ellipse cx="76" cy="62" rx="9" ry="10"/><ellipse cx="34" cy="78" rx="9" ry="8"/><ellipse cx="66" cy="78" rx="9" ry="8"/></g><circle cx="35" cy="32" r="7" fill="#F0A93E"/><circle cx="65" cy="32" r="7" fill="#F0A93E"/><circle cx="50" cy="56" r="25" fill="#FAC775"/><circle cx="50" cy="58" r="19" fill="#FCE0AD"/><circle cx="42" cy="54" r="4.5" fill="#7A4F12"/><circle cx="58" cy="54" r="4.5" fill="#7A4F12"/><circle cx="43.5" cy="52.5" r="1.5" fill="#fff"/><circle cx="59.5" cy="52.5" r="1.5" fill="#fff"/><ellipse cx="50" cy="60" rx="3" ry="2" fill="#A8651C"/><path d="M44 64 Q50 68 56 64" stroke="#7A4F12" stroke-width="2" fill="none" stroke-linecap="round"/></svg>`,
+    '순발력': `<svg viewBox="0 0 100 100" width="${size}" height="${size}"><ellipse cx="50" cy="92" rx="18" ry="3.5" fill="#F4A0B8" opacity="0.4"/><circle cx="34" cy="30" r="11" fill="#F4A0B8"/><circle cx="66" cy="30" r="11" fill="#F4A0B8"/><circle cx="34" cy="30" r="6" fill="#FAC8D6"/><circle cx="66" cy="30" r="6" fill="#FAC8D6"/><circle cx="34" cy="28" r="3.5" fill="#fff"/><circle cx="66" cy="28" r="3.5" fill="#fff"/><circle cx="34" cy="28.5" r="2" fill="#8A2847"/><circle cx="66" cy="28.5" r="2" fill="#8A2847"/><ellipse cx="50" cy="54" rx="25" ry="23" fill="#F4A0B8"/><ellipse cx="50" cy="56" rx="19" ry="17" fill="#FAC8D6"/><circle cx="42" cy="52" r="4.5" fill="#8A2847"/><circle cx="58" cy="52" r="4.5" fill="#8A2847"/><circle cx="43.5" cy="50.5" r="1.5" fill="#fff"/><circle cx="59.5" cy="50.5" r="1.5" fill="#fff"/><ellipse cx="50" cy="58" rx="4" ry="3" fill="#E2607E"/><path d="M44 62 Q50 66 56 62" stroke="#8A2847" stroke-width="2" fill="none" stroke-linecap="round"/></svg>`,
+    '체지방': `<svg viewBox="0 0 100 100" width="${size}" height="${size}"><ellipse cx="50" cy="90" rx="20" ry="4" fill="#B9A5E8" opacity="0.5"/><circle cx="32" cy="28" r="11" fill="#A38FD8"/><circle cx="68" cy="28" r="11" fill="#A38FD8"/><circle cx="32" cy="28" r="6.5" fill="#C9BCEC"/><circle cx="68" cy="28" r="6.5" fill="#C9BCEC"/><circle cx="50" cy="56" r="26" fill="#B9A5E8"/><circle cx="50" cy="58" r="20" fill="#DCD2F2"/><ellipse cx="50" cy="62" rx="11" ry="9" fill="#EFE9F9"/><circle cx="42" cy="54" r="4.5" fill="#3C2D6B"/><circle cx="58" cy="54" r="4.5" fill="#3C2D6B"/><circle cx="43.5" cy="52.5" r="1.5" fill="#fff"/><circle cx="59.5" cy="52.5" r="1.5" fill="#fff"/><ellipse cx="50" cy="58" rx="3.5" ry="2.8" fill="#6B5BA8"/><path d="M44 63 Q50 66 56 63" stroke="#3C2D6B" stroke-width="2" fill="none" stroke-linecap="round"/></svg>`,
+  };
+  return F[factor] || F['심폐지구력'];
+}
+
+const FACTOR_STYLE = {
+  '심폐지구력':   '🏃', '유연성': '🧘', '근력근지구력': '💪', '순발력': '🐸', '체지방': '⚖️'
+};
+let PAPS_EVENTS = {
+  '왕복오래달리기': { unit:'회',  emoji:'🏃', factor:'심폐지구력' },
+  '앉아윗몸앞굽히기': { unit:'cm', emoji:'🧘', factor:'유연성' },
+  '악력':           { unit:'kg',  emoji:'💪', factor:'근력근지구력' },
+  '제자리멀리뛰기': { unit:'cm',  emoji:'🐸', factor:'순발력' },
+};
+let PAPS_KEYS = Object.keys(PAPS_EVENTS);
+
+function rebuildTeacherEvents(config) {
+  if (!config || !config.length) return;
+  const ev = {};
+  config.forEach(c => {
+    ev[c.event] = { unit: c.unit, emoji: FACTOR_STYLE[c.factor] || '🏅', factor: c.factor, dir: c.dir, charge: c.charge || '공통' };
+  });
+  PAPS_EVENTS = ev;
+  PAPS_KEYS = Object.keys(PAPS_EVENTS);
+}
+const GRADE_LABELS = { 1:'1등급', 2:'2등급', 3:'3등급', 4:'4등급', 5:'5등급', 6:'성장 중' };
+const GRADE_COLORS = { 1:'#FEF9C3', 2:'#DBEAFE', 3:'#E0F2FE', 4:'#F0F9FF', 5:'#ECFEFF', 6:'#f0fdf4' };
+
+let selStudent     = null;
+let selEvent       = null;
+let currentTeacher = null;
+let allStudents    = []; // 전체 학생 목록 캐시 // { num, name, role }
+let _curClassFilter = '전체'; // 현재 선택된 반 필터
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 2500);
+}
+
+/* ── 선생님 설정 UI ── */
+window.addEventListener('load', () => { updateConnStatus(); });
+
+function updateConnStatus() {
+  const el = document.getElementById('conn-status');
+  if (!el) return;
+  if (_isDemo) {
+    el.innerHTML = '<span style="color:#f59e0b;">● 체험 모드</span> · 시트를 연결하면 우리 반 학생으로 바뀌어요';
+  } else {
+    el.innerHTML = '<span style="color:#16a34a;">● 우리 반 시트 연결됨</span>';
+    const box = document.getElementById('student-link-box');
+    const inp = document.getElementById('student-link-input');
+    if (box && inp) { box.style.display = 'block'; inp.value = getStudentLink(); }
+  }
+}
+
+function getStudentLink() {
+  // 교사 페이지 주소에서 학생용 주소 생성 (Teacher.html → index 경로로 추정)
+  let base = location.origin + location.pathname;
+  base = base.replace(/Teacher\.html?$/i, 'index.html').replace(/teacher\.html?$/i, 'index.html');
+  return base + '#c=' + encodeURIComponent(_execUrl);
+}
+
+function toggleTeacherSetup() {
+  const p = document.getElementById('teacher-setup-panel');
+  if (!p) return;
+  p.style.display = (p.style.display === 'none' || !p.style.display) ? 'block' : 'none';
+  if (p.style.display === 'block') {
+    const inp = document.getElementById('exec-url-input');
+    if (inp && _execUrl) inp.value = _execUrl;
+    updateConnStatus();
+  }
+}
+
+function onConnectSheet() {
+  const inp = document.getElementById('exec-url-input');
+  if (!inp) return;
+  if (connectSheet(inp.value)) {
+    updateConnStatus();
+    showToast('✅ 우리 반 시트에 연결됐어요!');
+  }
+}
+
+function copyStudentLink() {
+  const inp = document.getElementById('student-link-input');
+  if (!inp) return;
+  inp.select();
+  try { navigator.clipboard.writeText(inp.value); showToast('📋 학생용 주소를 복사했어요!'); }
+  catch(e) { document.execCommand('copy'); showToast('📋 학생용 주소를 복사했어요!'); }
+}
+
+function teacherLogin() {
+  const pw = document.getElementById('teacher-pw').value.trim();
+  if (!pw) { alert('비밀번호를 입력하세요'); return; }
+  google.script.run
+    .withSuccessHandler(res => {
+      if (!res.success) { alert(res.error || '비밀번호가 틀렸습니다'); return; }
+      currentTeacher = res.teacher;
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('app-screen').style.display = 'block';
+      document.getElementById('teacher-badge').textContent =
+        currentTeacher.name + ' (' + currentTeacher.role + ')';
+      document.getElementById('teacher-badge').style.display = 'inline-block';
+      // 측정종목설정 로드 후 카드 생성
+      google.script.run
+        .withSuccessHandler(cfgRes => {
+          if (cfgRes && cfgRes.success) rebuildTeacherEvents(cfgRes.config);
+          buildEventGrid();
+          loadStudentList();
+        })
+        .withFailureHandler(() => { buildEventGrid(); loadStudentList(); })
+        .getMeasurementConfig();
+    })
+    .withFailureHandler(err => alert('오류: ' + err.message))
+    .verifyTeacher(pw);
+}
+
+function logout() {
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('app-screen').style.display = 'none';
+  document.getElementById('teacher-pw').value = '';
+  selStudent = null;
+  currentTeacher = null;
+  document.getElementById('teacher-badge').style.display = 'none';
+}
+
+function loadStudentList() {
+  // 담임·전담 모두 전체 학생을 불러온 뒤, 반 필터로 좁힌다 (담당반이 안 맞아도 학생을 볼 수 있게)
+  google.script.run
+    .withSuccessHandler(res => {
+      if (!res.success || !res.students) return;
+      allStudents = res.students;
+      // 반이 2개 이상이면 반 필터 표시 (담임·전담 공통)
+      const classSet = [...new Set(res.students.map(s => String(s.classRoom || '').trim()).filter(c => c))];
+      if (classSet.length >= 1) {
+        buildClassFilter(res.students);
+      }
+      // 담임이면 자기 담당반을 기본 선택, 아니면 전체
+      let initial = '전체';
+      const myClass = currentTeacher ? String(currentTeacher.classRoom || '').trim() : '';
+      if (myClass && myClass !== '전체') {
+        // 담당반과 매칭되는 반이 있으면 그 반, 없으면 전체
+        const hit = classSet.find(c => _classMatch(c, myClass));
+        initial = hit || '전체';
+      }
+      _curClassFilter = initial;
+      renderStudentList(initial);
+      // 필터 버튼 활성화 표시
+      document.querySelectorAll('[id^="cf-"]').forEach(b => {
+        const active = b.id === 'cf-' + initial;
+        b.style.background = active ? '#1d4ed8' : 'white';
+        b.style.color      = active ? 'white'   : '#334155';
+        b.style.borderColor= active ? '#1d4ed8' : '#e2e8f0';
+      });
+    })
+    .getStudentList('전체');
+}
+
+// 반 표기 유연 매칭 (프론트)
+function _classMatch(a, b) {
+  a = String(a || '').trim(); b = String(b || '').trim();
+  if (!a || !b) return false;
+  if (a === b) return true;
+  const na = (a.match(/\d+/g) || []).join('-');
+  const nb = (b.match(/\d+/g) || []).join('-');
+  if (na && na === nb) return true;
+  return a.indexOf(b) >= 0 || b.indexOf(a) >= 0;
+}
+
+function buildClassFilter(students) {
+  const classes = ['전체', ...new Set(students.map(s => s.classRoom).filter(Boolean).sort())];
+  const wrap = document.getElementById('class-btns');
+  wrap.innerHTML = classes.map(c => `
+    <button onclick="filterClass('${c}')" id="cf-${c}"
+      style="padding:7px 16px; border-radius:20px; font-size:13px; font-weight:700; cursor:pointer;
+             border:1.5px solid ${c==='전체'?'#1d4ed8':'#e2e8f0'};
+             background:${c==='전체'?'#1d4ed8':'white'};
+             color:${c==='전체'?'white':'#334155'}; font-family:'Noto Sans KR',sans-serif;">
+      ${c}
+    </button>`).join('');
+  document.getElementById('class-filter').style.display = 'block';
+}
+
+function filterClass(cls) {
+  _curClassFilter = cls;
+  // 버튼 스타일 업데이트
+  document.querySelectorAll('[id^="cf-"]').forEach(b => {
+    const active = b.id === 'cf-' + cls;
+    b.style.background = active ? '#1d4ed8' : 'white';
+    b.style.color      = active ? 'white'   : '#334155';
+    b.style.borderColor= active ? '#1d4ed8' : '#e2e8f0';
+  });
+  renderStudentList(cls);
+}
+
+function renderStudentList(cls) {
+  const sel = document.getElementById('student-sel');
+  const filtered = (cls === '전체') ? allStudents : allStudents.filter(s => _classMatch(s.classRoom, cls));
+  sel.innerHTML = '<option value="">학생을 선택하세요</option>';
+  filtered.forEach(s => {
+    const o = document.createElement('option');
+    o.value = s.num;
+    o.textContent = (s.classRoom ? '[' + s.classRoom + '] ' : '') + s.num + '번 ' + s.name;
+    sel.appendChild(o);
+  });
+  // 학생 선택 초기화
+  selStudent = null;
+  document.getElementById('input-card').style.display = 'none';
+  document.getElementById('records-card').style.display = 'none';
+  document.getElementById('student-info').style.display = 'none';
+}
+
+function onStudentChange() {
+  const sel = document.getElementById('student-sel');
+  const num = sel.value;
+  if (!num) { selStudent = null; document.getElementById('input-card').style.display = 'none'; document.getElementById('records-card').style.display = 'none'; return; }
+  selStudent = { num, name: sel.options[sel.selectedIndex].textContent };
+  // 학생 학년/성별 로드 (BMI 판정용)
+  google.script.run.withSuccessHandler(r => {
+    if (r && r.userInfo) selStudentInfo = { grade: r.userInfo.grade, gender: r.userInfo.gender };
+  }).getStudentDataInternal(num);
+  document.getElementById('student-info').style.display = 'block';
+  document.getElementById('student-info').textContent = selStudent.name + ' 학생의 PAPS 기록을 입력하거나 수정할 수 있어요.';
+  document.getElementById('input-card').style.display = 'block';
+  loadStudentRecords(num);
+  // 이벤트 선택 초기화
+  document.querySelectorAll('.ev-card').forEach(c => c.classList.remove('active'));
+  document.getElementById('normal-input').style.display = 'none';
+  document.getElementById('akryok-input').style.display = 'none';
+  selEvent = null;
+}
+
+function buildEventGrid() {
+  const grid = document.getElementById('event-grid');
+  const myRole = currentTeacher ? currentTeacher.role : '';
+  grid.innerHTML = PAPS_KEYS.map(k => {
+    const e = PAPS_EVENTS[k];
+    const unitLabel = k === '악력' ? '단위: kg (오른손/왼손 평균)'
+                    : e.unit ? '단위: ' + e.unit : (k === 'BMI' ? '키·몸무게로 자동 계산' : '');
+    // 담당 판정: 내 역할과 일치하거나 '공통'이면 내 담당
+    const charge = e.charge || '공통';
+    const isMine = (charge === '공통') || (charge === myRole) ||
+                   (myRole === '체육전담' && charge === '전담');
+    const badge = charge === '공통' ? '' :
+      `<div class="charge-badge ${isMine?'mine':'other'}">${charge} 담당</div>`;
+    const dimStyle = isMine ? '' : 'opacity:0.55;';
+    return `<div class="ev-card ${isMine?'mine-card':''}" id="ev-${k}" onclick="selectEvent('${k}')" style="${dimStyle}">
+      ${badge}
+      <div class="emoji">${papsChar(e.factor, 46)}</div>
+      <div class="name">${k}</div>
+      <div class="unit">${unitLabel}</div>
+    </div>`;
+  }).join('');
+}
+
+function selectEvent(ev) {
+  selEvent = ev;
+  // 담당 아닌 종목 안내 (입력은 가능)
+  const e = PAPS_EVENTS[ev];
+  const myRole = currentTeacher ? currentTeacher.role : '';
+  const charge = e && e.charge ? e.charge : '공통';
+  const isMine = (charge === '공통') || (charge === myRole) || (myRole === '체육전담' && charge === '전담');
+  if (!isMine && charge !== '공통') {
+    showToast('ℹ️ 원래 ' + charge + ' 담당 종목이에요. 입력은 가능해요.');
+  }
+  document.querySelectorAll('.ev-card').forEach(c => c.classList.remove('active'));
+  document.getElementById('ev-' + ev).classList.add('active');
+  // 모든 입력 영역 숨김
+  document.getElementById('normal-input').style.display = 'none';
+  document.getElementById('akryok-input').style.display = 'none';
+  document.getElementById('bmi-input').style.display = 'none';
+
+  if (ev === '악력') {
+    document.getElementById('akryok-input').style.display = 'block';
+    document.getElementById('ak-right').value = '';
+    document.getElementById('ak-left').value = '';
+    document.getElementById('ak-avg').style.display = 'none';
+  } else if (ev === 'BMI') {
+    document.getElementById('bmi-input').style.display = 'block';
+    document.getElementById('bmi-height').value = '';
+    document.getElementById('bmi-weight').value = '';
+    document.getElementById('bmi-preview').style.display = 'none';
+  } else {
+    document.getElementById('normal-input').style.display = 'block';
+    // 선택 종목 배너 채우기
+    document.getElementById('sel-event-char').innerHTML = papsChar(e.factor, 38);
+    document.getElementById('sel-event-name').textContent = ev;
+    const dirHint = e.dir === '낮을수록좋음' ? '낮을수록 좋아요' : (e.dir === '범위' ? '' : '높을수록 좋아요');
+    document.getElementById('sel-event-hint').textContent = (e.factor || '') + (dirHint ? ' · ' + dirHint : '');
+    document.getElementById('input-label').textContent = ev + ' 기록 입력';
+    document.getElementById('paps-unit-label').textContent = PAPS_EVENTS[ev].unit;
+    document.getElementById('paps-value').value = '';
+    document.getElementById('paps-value').focus();
+  }
+}
+
+// BMI 실시간 미리보기
+function calcBmiPreview() {
+  const h = parseFloat(document.getElementById('bmi-height').value) || 0;
+  const w = parseFloat(document.getElementById('bmi-weight').value) || 0;
+  if (h > 0 && w > 0) {
+    const hM = h / 100;
+    const bmi = Math.ceil((w / (hM*hM)) * 10) / 10;
+    document.getElementById('bmi-val').textContent = bmi;
+    document.getElementById('bmi-status').textContent = getBmiStatusLocal(bmi);
+    document.getElementById('bmi-preview').style.display = 'block';
+  } else {
+    document.getElementById('bmi-preview').style.display = 'none';
+  }
+}
+
+// 클라이언트용 BMI 상태 판정 (학생 학년/성별 필요)
+const BMI_STD_T = {
+  '3': { '남':[13.9,20.7,23.2,29.9], '여':[13.7,19.8,22.0,29.9] },
+  '4': { '남':[14.2,20.7,23.2,29.9], '여':[13.9,19.8,22.0,29.9] },
+  '5': { '남':[14.5,21.6,24.4,29.9], '여':[14.2,20.6,23.0,29.9] },
+  '6': { '남':[14.8,22.5,24.9,29.9], '여':[14.6,21.4,23.9,29.9] },
+};
+let selStudentInfo = null; // 선택한 학생의 학년/성별
+
+function getBmiStatusLocal(bmi) {
+  const grade  = selStudentInfo ? String(selStudentInfo.grade) : '4';
+  const gender = selStudentInfo ? String(selStudentInfo.gender) : '남';
+  const std = (BMI_STD_T[grade] || BMI_STD_T['4']);
+  const thr = std[gender] || std['남'];
+  if (bmi <= thr[0]) return '마름';
+  if (bmi <= thr[1]) return '정상';
+  if (bmi <= thr[2]) return '과체중';
+  if (bmi <= thr[3]) return '경도비만';
+  return '고도비만';
+}
+
+function saveBmi() {
+  if (!selStudent) { alert('학생을 선택하세요'); return; }
+  const h = parseFloat(document.getElementById('bmi-height').value) || 0;
+  const w = parseFloat(document.getElementById('bmi-weight').value) || 0;
+  if (h <= 0 || w <= 0) { alert('키와 몸무게를 입력하세요'); return; }
+  const hM = h / 100;
+  const bmi = Math.ceil((w / (hM*hM)) * 10) / 10;
+  google.script.run
+    .withSuccessHandler(res => {
+      if (!res.success) { alert(res.error); return; }
+      showToast('✅ ' + selStudent.name + ' · BMI ' + bmi + ' (' + (res.bmiStatus||'') + ') 저장 완료!');
+      loadStudentRecords(selStudent.num);
+    })
+    .withFailureHandler(err => alert('오류: ' + err.message))
+    .saveTeacherPaps(selStudent.num, 'BMI', bmi, 0, 0, currentTeacher ? currentTeacher.name : '교사', h, w);
+}
+
+function calcAvg() {
+  const r = parseFloat(document.getElementById('ak-right').value) || 0;
+  const l = parseFloat(document.getElementById('ak-left').value) || 0;
+  if (r > 0 || l > 0) {
+    const avg = ((r + l) / 2).toFixed(1);
+    document.getElementById('ak-avg-val').textContent = avg;
+    document.getElementById('ak-avg').style.display = 'block';
+  }
+}
+
+function saveRecord() {
+  if (!selStudent || !selEvent) { alert('학생과 종목을 선택하세요'); return; }
+  const val = parseFloat(document.getElementById('paps-value').value);
+  if (isNaN(val) || val <= 0) { alert('올바른 값을 입력하세요'); return; }
+  google.script.run
+    .withSuccessHandler(res => {
+      if (!res.success) { alert(res.error); return; }
+      showToast('✅ ' + selStudent.name + ' · ' + selEvent + ' ' + val + PAPS_EVENTS[selEvent].unit + ' 저장 완료!');
+      loadStudentRecords(selStudent.num);
+    })
+    .withFailureHandler(err => alert('오류: ' + err.message))
+    .saveTeacherPaps(selStudent.num, selEvent, val, val, 0, currentTeacher ? currentTeacher.name : '교사');
+}
+
+function saveAkryok() {
+  if (!selStudent) { alert('학생을 선택하세요'); return; }
+  const r = parseFloat(document.getElementById('ak-right').value) || 0;
+  const l = parseFloat(document.getElementById('ak-left').value) || 0;
+  if (r <= 0 && l <= 0) { alert('값을 입력하세요'); return; }
+  const avg = parseFloat(((r + l) / 2).toFixed(1));
+  google.script.run
+    .withSuccessHandler(res => {
+      if (!res.success) { alert(res.error); return; }
+      showToast('✅ ' + selStudent.name + ' · 악력 ' + avg + 'kg (우:' + r + ' 좌:' + l + ') 저장 완료!');
+      loadStudentRecords(selStudent.num);
+    })
+    .withFailureHandler(err => alert('오류: ' + err.message))
+    .saveTeacherPaps(selStudent.num, '악력', avg, r, l, currentTeacher ? currentTeacher.name : '교사');
+}
+
+function loadStudentRecords(num) {
+  google.script.run
+    .withSuccessHandler(res => {
+      if (!res.success) return;
+      const rec = res.papsRecord || {};
+      const tbody = document.getElementById('records-tbody');
+      tbody.innerHTML = PAPS_KEYS.map(k => {
+        const val = rec[k];
+        if (val === null || val === undefined) {
+          return `<tr><td>${PAPS_EVENTS[k].emoji} ${k}</td><td style="color:#94a3b8;">미입력</td><td>—</td></tr>`;
+        }
+        return `<tr>
+          <td>${PAPS_EVENTS[k].emoji} ${k}</td>
+          <td style="font-weight:700;">${val}${PAPS_EVENTS[k].unit}</td>
+          <td><span style="background:#dbeafe; color:#1e40af; padding:3px 10px; border-radius:20px; font-size:12px; font-weight:700;">입력됨</span></td>
+        </tr>`;
+      }).join('');
+      document.getElementById('records-card').style.display = 'block';
+      // 종목 그리드에 측정 완료/미측정 표시 반영
+      markMeasuredEvents(rec);
+      updateMeasureProgress(rec);
+    })
+    .withFailureHandler(() => {})
+    .getStudentDataInternal(num);
+}
+
+// 종목 카드에 측정 완료(✓) / 미측정 표시
+function markMeasuredEvents(rec) {
+  PAPS_KEYS.forEach(k => {
+    const card = document.getElementById('ev-' + k);
+    if (!card) return;
+    const measured = rec[k] !== null && rec[k] !== undefined;
+    // 기존 상태 배지 제거
+    const old = card.querySelector('.measure-status');
+    if (old) old.remove();
+    // 카드 테두리/배경
+    card.classList.toggle('measured', measured);
+    // 상태 배지 추가
+    const badge = document.createElement('div');
+    badge.className = 'measure-status';
+    if (measured) {
+      badge.innerHTML = '✓ 측정 완료';
+      badge.style.cssText = 'position:absolute; top:8px; right:8px; background:#16a34a; color:white; font-size:11px; font-weight:700; padding:2px 8px; border-radius:10px;';
+    } else {
+      badge.innerHTML = '미측정';
+      badge.style.cssText = 'position:absolute; top:8px; right:8px; background:#f1f5f9; color:#94a3b8; font-size:11px; font-weight:700; padding:2px 8px; border-radius:10px;';
+    }
+    card.style.position = 'relative';
+    card.appendChild(badge);
+  });
+}
+
+// 선택한 학생의 측정 진행률 표시
+function updateMeasureProgress(rec) {
+  const total = PAPS_KEYS.length;
+  const done = PAPS_KEYS.filter(k => rec[k] !== null && rec[k] !== undefined).length;
+  const el = document.getElementById('measure-progress');
+  if (!el) return;
+  const pct = total > 0 ? Math.round(done / total * 100) : 0;
+  const color = done === total ? '#16a34a' : (done > 0 ? '#f59e0b' : '#94a3b8');
+  el.innerHTML = `<div style="display:flex; align-items:center; gap:10px;">
+    <span style="font-size:14px; font-weight:700; color:${color};">측정 ${done}/${total}</span>
+    <div style="flex:1; background:#f1f5f9; border-radius:8px; height:8px; overflow:hidden;">
+      <div style="width:${pct}%; height:100%; background:${color};"></div>
+    </div>
+    <span style="font-size:13px; color:${color}; font-weight:700;">${pct}%</span>
+  </div>`;
+}
+
+let _classRows = [];        // 현재 반 학생 기록
+let _classView = 'table';   // 현재 보기
+
+function loadClassRecords() {
+  const wrap = document.getElementById('class-records');
+  wrap.innerHTML = '<div style="text-align:center; padding:20px; color:#94a3b8;">불러오는 중...</div>';
+  google.script.run
+    .withSuccessHandler(res => {
+      if (!res || !res.success) { wrap.textContent = '불러오기 실패'; return; }
+      let rows = res.records || [];
+      if (_curClassFilter && _curClassFilter !== '전체') {
+        rows = rows.filter(r => _classMatch(r.classRoom, _curClassFilter));
+      }
+      if (rows.length === 0) {
+        document.getElementById('class-view-tabs').style.display = 'none';
+        document.getElementById('class-tools').style.display = 'none';
+        wrap.innerHTML = '<div style="text-align:center; padding:20px; color:#94a3b8;">아직 기록이 없어요.</div>';
+        return;
+      }
+      _classRows = rows;
+      document.getElementById('class-view-tabs').style.display = 'flex';
+      switchClassView('table');
+    })
+    .withFailureHandler(() => { wrap.textContent = '불러오기 실패'; })
+    .getClassRecords();
+}
+
+function switchClassView(view) {
+  _classView = view;
+  ['table','todo','grade'].forEach(v => {
+    const b = document.getElementById('cvt-' + v);
+    if (b) b.classList.toggle('active', v === view);
+  });
+  document.getElementById('class-tools').style.display = (view === 'table') ? 'flex' : 'none';
+  if (view === 'table')      renderClassTable();
+  else if (view === 'todo')  renderClassTodo();
+  else if (view === 'grade') renderClassGrade();
+}
+
+// 측정 종목 수 (한 학생 기준)
+function _doneCount(r) {
+  return PAPS_KEYS.filter(k => r.records[k] !== null && r.records[k] !== undefined).length;
+}
+
+/* ① 기록표 (검색·정렬) */
+function renderClassTable() {
+  const wrap = document.getElementById('class-records');
+  const q = (document.getElementById('class-search').value || '').trim();
+  const sort = document.getElementById('class-sort').value;
+  let rows = _classRows.slice();
+  // 검색
+  if (q) rows = rows.filter(r => (r.name && r.name.indexOf(q) >= 0) || String(r.num).indexOf(q) >= 0);
+  // 정렬
+  rows.sort((a, b) => {
+    if (sort === 'name') return String(a.name).localeCompare(String(b.name), 'ko');
+    if (sort === 'done-desc') return _doneCount(b) - _doneCount(a);
+    if (sort === 'done-asc')  return _doneCount(a) - _doneCount(b);
+    return Number(a.num) - Number(b.num); // num
+  });
+
+  const nStudents = _classRows.length;
+  const doneCount = {};
+  PAPS_KEYS.forEach(k => { doneCount[k] = _classRows.filter(r => r.records[k] !== null && r.records[k] !== undefined).length; });
+
+  const headCells = PAPS_KEYS.map(k => {
+    const e = PAPS_EVENTS[k];
+    return `<th style="min-width:72px; padding:8px 10px; vertical-align:bottom;">
+      <div style="display:flex; flex-direction:column; align-items:center; gap:2px;">
+        <span style="line-height:1;">${papsChar(e.factor, 26)}</span>
+        <span style="font-size:12px; font-weight:700; color:#475569;">${k}</span>
+        <span style="font-size:10px; font-weight:400; color:#94a3b8;">${doneCount[k]}/${nStudents}명</span>
+      </div>
+    </th>`;
+  }).join('');
+
+  const bodyRows = rows.map(r => {
+    const cells = PAPS_KEYS.map(k => {
+      const v = r.records[k];
+      if (v === null || v === undefined) return `<td style="text-align:center; color:#cbd5e1;">—</td>`;
+      const unit = (k === 'BMI') ? '' : (PAPS_EVENTS[k].unit || '');
+      return `<td style="text-align:center; font-weight:700; color:#1e293b; white-space:nowrap;">${v}<span style="font-size:11px; font-weight:400; color:#94a3b8;">${unit}</span></td>`;
+    }).join('');
+    const done = _doneCount(r);
+    const allDone = done === PAPS_KEYS.length;
+    const statusTag = allDone
+      ? '<span style="color:#16a34a; font-size:13px;">✓</span>'
+      : `<span style="font-size:11px; color:#f59e0b; font-weight:400;">${done}/${PAPS_KEYS.length}</span>`;
+    return `<tr>
+      <td style="text-align:center; color:#64748b;">${r.num}</td>
+      <td style="text-align:left; font-weight:700; white-space:nowrap;">${r.name} ${statusTag}</td>
+      ${cells}
+    </tr>`;
+  }).join('');
+
+  wrap.innerHTML = `<div style="overflow-x:auto; -webkit-overflow-scrolling:touch;">
+    <table class="class-record-table">
+      <thead><tr><th style="text-align:center;">번호</th><th style="text-align:left;">이름</th>${headCells}</tr></thead>
+      <tbody>${bodyRows}</tbody>
+    </table>
+  </div>
+  <div style="margin-top:10px; font-size:12px; color:#94a3b8;">${q ? '검색 결과 ' + rows.length + '명 · ' : ''}총 ${nStudents}명 · ✓는 전 종목 측정 완료</div>`;
+}
+
+/* ② 미측정 한눈에 보기 + 종목별 진행률 */
+function renderClassTodo() {
+  const wrap = document.getElementById('class-records');
+  const n = _classRows.length;
+  let html = '<div style="display:flex; flex-direction:column; gap:14px;">';
+
+  PAPS_KEYS.forEach(k => {
+    const e = PAPS_EVENTS[k];
+    const notDone = _classRows.filter(r => r.records[k] === null || r.records[k] === undefined);
+    const done = n - notDone.length;
+    const pct = n > 0 ? Math.round(done / n * 100) : 0;
+    const barColor = pct === 100 ? '#16a34a' : (pct >= 50 ? '#f59e0b' : '#ef4444');
+
+    html += `<div style="border:1px solid #e2e8f0; border-radius:14px; padding:14px 16px;">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+        <span>${papsChar(e.factor, 28)}</span>
+        <strong style="font-size:15px; color:#1e293b;">${k}</strong>
+        <span style="margin-left:auto; font-size:13px; font-weight:700; color:${barColor};">${done}/${n}명 (${pct}%)</span>
+      </div>
+      <div style="background:#f1f5f9; border-radius:8px; height:10px; overflow:hidden; margin-bottom:10px;">
+        <div style="width:${pct}%; height:100%; background:${barColor};"></div>
+      </div>`;
+    if (notDone.length === 0) {
+      html += `<div style="font-size:13px; color:#16a34a; font-weight:700;">✓ 모두 측정 완료!</div>`;
+    } else {
+      const chips = notDone.map(r =>
+        `<span style="display:inline-flex; align-items:center; gap:3px; background:#fef2f2; color:#b91c1c; border:1px solid #fecaca; border-radius:8px; padding:4px 9px; font-size:13px; font-weight:600; white-space:nowrap;">
+          <span style="color:#ef4444; font-size:11px; font-weight:700;">${r.num}</span> ${r.name}
+        </span>`
+      ).join('');
+      html += `<div style="font-size:13px; color:#ef4444; font-weight:700; margin-bottom:8px;">미측정 ${notDone.length}명</div>
+        <div style="display:flex; flex-wrap:wrap; gap:6px;">${chips}</div>`;
+    }
+    html += `</div>`;
+  });
+  html += '</div>';
+  wrap.innerHTML = html;
+}
+
+/* ③ 등급 분포 보기 */
+function renderClassGrade() {
+  const wrap = document.getElementById('class-records');
+  const gradeColor = { 1:'#fbbf24', 2:'#a3e635', 3:'#60a5fa', 4:'#f59e0b', 5:'#f87171', 6:'#cbd5e1' };
+  const gradeLabel = { 1:'1등급', 2:'2등급', 3:'3등급', 4:'4등급', 5:'5등급', 6:'성장중' };
+  let html = '<div style="display:flex; flex-direction:column; gap:14px;">';
+
+  getTrainableKeysT().forEach(k => {
+    const e = PAPS_EVENTS[k];
+    // 등급별 인원 집계 (백엔드가 계산한 grades 사용)
+    const dist = {1:0,2:0,3:0,4:0,5:0,6:0};
+    let measured = 0;
+    _classRows.forEach(r => {
+      const g = r.grades ? r.grades[k] : null;
+      if (g) { dist[g] = (dist[g]||0) + 1; measured++; }
+    });
+    if (measured === 0) {
+      html += `<div style="border:1px solid #e2e8f0; border-radius:14px; padding:14px 16px;">
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;"><span>${papsChar(e.factor, 26)}</span><strong style="font-size:15px;">${k}</strong></div>
+        <div style="font-size:13px; color:#94a3b8;">아직 측정 기록이 없어요.</div></div>`;
+      return;
+    }
+    // 누적 막대
+    let bar = '';
+    [1,2,3,4,5,6].forEach(g => {
+      if (dist[g] > 0) {
+        const w = Math.round(dist[g] / measured * 100);
+        bar += `<div style="width:${w}%; background:${gradeColor[g]}; display:flex; align-items:center; justify-content:center; color:white; font-size:11px; font-weight:700;" title="${gradeLabel[g]} ${dist[g]}명">${w >= 12 ? dist[g] : ''}</div>`;
+      }
+    });
+    // 범례
+    let legend = [1,2,3,4,5,6].filter(g => dist[g] > 0).map(g =>
+      `<span style="font-size:11px; color:#64748b;"><span style="display:inline-block; width:9px; height:9px; border-radius:2px; background:${gradeColor[g]}; vertical-align:middle;"></span> ${gradeLabel[g]} ${dist[g]}명</span>`
+    ).join(' · ');
+
+    html += `<div style="border:1px solid #e2e8f0; border-radius:14px; padding:14px 16px;">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+        <span>${papsChar(e.factor, 26)}</span><strong style="font-size:15px; color:#1e293b;">${k}</strong>
+        <span style="margin-left:auto; font-size:12px; color:#94a3b8;">측정 ${measured}명</span>
+      </div>
+      <div style="display:flex; height:24px; border-radius:6px; overflow:hidden; margin-bottom:8px;">${bar}</div>
+      <div style="display:flex; flex-wrap:wrap; gap:8px;">${legend}</div>
+    </div>`;
+  });
+  html += '</div>';
+  wrap.innerHTML = html;
+}
+
+// 교사 화면용 등급 종목(BMI 제외)
+function getTrainableKeysT() {
+  return PAPS_KEYS.filter(k => k !== 'BMI' && (PAPS_EVENTS[k].factor !== '체지방'));
+}
+
+/* ④ CSV 내보내기 */
+function exportClassCSV() {
+  if (!_classRows.length) { alert('먼저 현황을 불러와주세요.'); return; }
+  const header = ['번호', '이름', '반', ...PAPS_KEYS];
+  const lines = [header.join(',')];
+  _classRows.forEach(r => {
+    const row = [r.num, '"' + (r.name||'') + '"', '"' + (r.classRoom||'') + '"'];
+    PAPS_KEYS.forEach(k => {
+      const v = r.records[k];
+      row.push(v === null || v === undefined ? '' : v);
+    });
+    lines.push(row.join(','));
+  });
+  const csv = '\uFEFF' + lines.join('\n'); // BOM (엑셀 한글 깨짐 방지)
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const today = new Date();
+  const ymd = today.getFullYear() + ('0'+(today.getMonth()+1)).slice(-2) + ('0'+today.getDate()).slice(-2);
+  a.href = url;
+  a.download = 'PAPS_반현황_' + ymd + '.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('⬇️ CSV 파일을 내려받았어요!');
+}
+</script>
+</body>
+</html>
