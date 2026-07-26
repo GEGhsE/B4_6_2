@@ -1096,11 +1096,14 @@
         const n = parseInt(num) || 1;
         return {
           success: true,
-          userInfo: { num: String(n), name: '학생' + n, grade: 4, gender: (n % 2 ? '남' : '여'), classRoom: (n <= 15 ? '1반' : '2반') },
+          userInfo: {
+            num: String(n), name: '학생' + n, grade: 4,
+            gender: (n % 2 ? '남' : '여'), classRoom: (n <= 15 ? '1반' : '2반'),
+            totalMinutes: _demoGet('mins:' + n, 0),   // 이 값이 없으면 화면이 toFixed에서 멈췄다.
+          },
           skillConfig: demoConfig.map(c => c.factor),
           measureConfig: demoConfig,
           // 아래 세 가지는 실제 서버 응답과 같은 모양으로 맞춘다.
-          // 이게 없으면 화면이 기준표를 undefined에서 읽으려다 오류가 났다.
           papsRecord: _demoGet('paps:' + n, {}),
           myLogs: _demoGet('logs:' + n, []),
           papsStandards: DEMO_STANDARDS,
@@ -1111,12 +1114,17 @@
         const n = parseInt(num) || 1;
         return {
           success: true,
-          userInfo: { num, name: '학생' + num, grade: 4, gender: (n % 2 ? '남' : '여'), classRoom: (n <= 15 ? '1반' : '2반') },
+          userInfo: {
+            num, name: '학생' + num, grade: 4,
+            gender: (n % 2 ? '남' : '여'), classRoom: (n <= 15 ? '1반' : '2반'),
+            totalMinutes: _demoGet('mins:' + num, 0),
+          },
           papsRecord: _demoGet('paps:' + num, {}),
           myLogs: _demoGet('logs:' + num, []),
           monthlyMins: 0,
           totalMinutes: _demoGet('mins:' + num, 0),
           measureConfig: demoConfig,
+          papsStandards: DEMO_STANDARDS,
         };
       }
       case 'savePlan': {
@@ -1872,7 +1880,9 @@
         hideSpin();
         if (!res.success) { document.getElementById('login-err').textContent = res.error; return; }
         user = res.userInfo;
-        papsRec = res.papsRecord;       // [수정] skillRecord → papsRecord
+        // 값이 비어 있어도 화면이 멈추지 않게 기본값을 채운다.
+        if (user) { user.totalMinutes = Number(user.totalMinutes) || 0; }
+        papsRec = res.papsRecord || {};  // [수정] skillRecord → papsRecord
         PAPS_STANDARDS = res.papsStandards; // [수정] 백엔드 기준표 사용
         user.myLogs = res.myLogs;
         rebuildEvents(res.measureConfig);   // 동적 종목 재구성
